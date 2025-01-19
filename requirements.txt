@@ -1,5 +1,4 @@
 numpy
-prompt_toolkit
 torch
 tqdm
 accelerate

@@ -3,7 +3,6 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, AutoConfig
 import numpy as np
 import json
-from prompt_toolkit.shortcuts import checkboxlist_dialog, input_dialog
 import argparse
 from tqdm import tqdm
 import os
@@ -32,7 +31,7 @@ class ModelModifier:
                 self.model = AutoModelForCausalLM.from_pretrained(
                     model_name,
                     config=config,
-                    torch_dtype=torch.float32,
+                    torch_dtype="auto",
                     low_cpu_mem_usage=True,
                     trust_remote_code=True,
                     device_map="auto"
@@ -61,15 +60,11 @@ class ModelModifier:
                 weight_types.add(weight_type)
         return list(weight_types)
 
-    def interactive_select_weights(self):
+    def select_weights(self):
         weight_types = self.get_weight_types()
         sorted_weight_types = self.sort_weight_types(weight_types)
-        selected_types = checkboxlist_dialog(
-            title="Select Weight Types", 
-            text="Deselect the weight types you do not want to scan for SNR:",
-            values=[(wt, wt) for wt in sorted_weight_types],
-            default_values=sorted_weight_types
-        ).run()
+        print(f"Available weight types: {[(wt, wt) for wt in sorted_weight_types]}")
+        selected_types = input("Weight types (comma separated list):").replace(' ', '').split(",")
         self.layer_types = selected_types
         return selected_types
 
@@ -219,10 +214,10 @@ def main():
         modifier.generate_unfrozen_params_yaml(snr_file_path, args.top_percent)
     else:
         print(f"No existing SNR results file found for {args.model_name}. Proceeding with SNR calculation.")
-        batch_size = input_dialog(title="Batch Size", text="Enter the batch size:").run()
+        batch_size = input("Batch size: ")
         batch_size = int(batch_size) if batch_size else 1
         modifier = ModelModifier(model_name=args.model_name, batch_size=batch_size)
-        selected_weight_types = modifier.interactive_select_weights()
+        selected_weight_types = modifier.select_weights()
         if selected_weight_types:
             modifier.assess_layers_snr(selected_weight_types)
             modifier.save_snr_to_json()
