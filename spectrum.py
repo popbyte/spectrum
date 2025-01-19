@@ -19,8 +19,8 @@ class ModelModifier:
             try:
                 self.model = AutoModelForCausalLM.from_pretrained(
                     model_name, 
-                    torch_dtype=torch.float32, 
-                    low_cpu_mem_usage=True, 
+                    torch_dtype="auto", 
+                    low_cpu_mem_usage=True,
                     trust_remote_code=True, 
                     device_map="auto"
                 )
